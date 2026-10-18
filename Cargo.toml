@@ -22,9 +22,11 @@ default = ["timestamp"]
 alloc = []
 std = ["alloc"]
 timestamp = []
-serde = ["dep:serde", "portable-atomic/serde"]
+fixed = ["dep:fixed"]
+serde = ["dep:serde", "portable-atomic/serde", "fixed?/serde"]
 
 [dependencies]
+fixed = { version = "1.16.0", default-features = false, optional = true }
 portable-atomic = { version = "1", features = ["float"] }
 
 [dependencies.serde]

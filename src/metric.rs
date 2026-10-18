@@ -10,6 +10,11 @@ use crate::timestamp::{TimestampCell, UnixTimestamp};
 #[cfg(test)]
 mod tests;
 
+#[cfg(feature = "fixed")]
+mod fixed_gauge;
+#[cfg(feature = "fixed")]
+pub use self::fixed_gauge::{FixedGauge, FixedValue};
+
 /// A builder for constructing [`MetricFamily`] instances.
 #[derive(Debug)]
 pub struct MetricBuilder<'a> {

@@ -588,3 +588,78 @@ fn counter_serializes() {
         serde_json::from_str::<serde_json::Value>(&json).expect("metrics must deserialize");
     assert_eq!(actual, expected);
 }
+
+#[cfg(feature = "fixed")]
+mod fixed_gauge {
+    use super::*;
+    use fixed::types::{I14F50, I16F16, U8F8};
+
+    fn family<F: FixedValue>() -> MetricFamily<'static, FixedGauge<F>, 2> {
+        let builder = MetricBuilder::new("test_gauge")
+            .with_help("a test gauge")
+            .with_unit("tests");
+        #[cfg(feature = "timestamp")]
+        let builder = builder.without_timestamps();
+        builder.build()
+    }
+
+    #[test]
+    fn fixed_gauge() {
+        let family = family::<I16F16>();
+        family
+            .register(&[("metric", "1")])
+            .expect("metric 1 must register")
+            .set_value(I16F16::from_num(24.65));
+        family
+            .register(&[("metric", "2")])
+            .expect("metric 2 must register")
+            .set_value(I16F16::from_num(-45));
+
+        let expected = "\
+        # TYPE test_gauge gauge\n\
+        # UNIT test_gauge tests\n\
+        # HELP test_gauge a test gauge\n\
+        test_gauge{metric=\"1\"} 24.65\n\
+        test_gauge{metric=\"2\"} -45\n\n\
+        ";
+        assert_str_eq!(family.to_string(), expected);
+    }
+
+    #[test]
+    fn fixed_gauge_holds_small_and_unsigned_values() {
+        let small = family::<I14F50>();
+        small
+            .register(&[("metric", "1")])
+            .expect("metric must register")
+            .set_value(I14F50::from_num(19.617e-12));
+        let unsigned = family::<U8F8>();
+        unsigned
+            .register(&[("metric", "1")])
+            .expect("metric must register")
+            .set_value(U8F8::from_num(255.5));
+
+        assert!(
+            small
+                .to_string()
+                .contains("test_gauge{metric=\"1\"} 0.0000000000196"),
+            "{small}"
+        );
+        assert!(
+            unsigned
+                .to_string()
+                .contains("test_gauge{metric=\"1\"} 255.5\n"),
+            "{unsigned}"
+        );
+    }
+
+    #[test]
+    fn fixed_gauge_is_unrecorded_until_set() {
+        let family = family::<I16F16>();
+        let metric = family
+            .register(&[("metric", "1")])
+            .expect("metric must register");
+        assert!(!metric.has_been_recorded());
+        metric.set_value(I16F16::ZERO);
+        assert!(metric.has_been_recorded());
+    }
+}
