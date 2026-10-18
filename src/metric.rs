@@ -423,6 +423,8 @@ where
 
 impl Gauge {
     const fn from_builder(builder: &MetricBuilder<'_>) -> Self {
+        #[cfg(not(feature = "timestamp"))]
+        let _ = builder;
         Self {
             value: AtomicF64::new(f64::NAN),
             recorded: AtomicBool::new(false),
@@ -488,6 +490,8 @@ impl Serialize for Gauge {
 
 impl Counter {
     const fn from_builder(builder: &MetricBuilder<'_>) -> Self {
+        #[cfg(not(feature = "timestamp"))]
+        let _ = builder;
         Self {
             value: AtomicUsize::new(0),
 
@@ -542,6 +546,8 @@ impl Serialize for Counter {
 
 impl IntGauge {
     const fn from_builder(builder: &MetricBuilder<'_>) -> Self {
+        #[cfg(not(feature = "timestamp"))]
+        let _ = builder;
         Self {
             value: AtomicUsize::new(0),
             recorded: AtomicBool::new(false),
